@@ -1,22 +1,34 @@
-
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getAnalytics } from "firebase/analytics";
 
-// --- CẤU HÌNH FIREBASE CỦA BẠN ---
-// Bạn cần tạo project tại https://console.firebase.google.com/
-// Bật Authentication > Sign-in method > Google
-// Copy config vào bên dưới:
-
+// --- CẤU HÌNH FIREBASE CHÍNH THỨC ---
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDdk8nZCyJUi5yYnk2IlUqGc0nmf65Fmvk",
+  authDomain: "gen-lang-client-0082195972.firebaseapp.com",
+  projectId: "gen-lang-client-0082195972",
+  storageBucket: "gen-lang-client-0082195972.firebasestorage.app",
+  messagingSenderId: "389932945616",
+  appId: "1:389932945616:web:2a6a0d4752e03f225a4ed5",
+  measurementId: "G-DKC1KELKR9"
 };
 
-// Khởi tạo Firebase
-// Lưu ý: Nếu chưa thay config thật, app sẽ không lỗi ngay lập tức nhưng chức năng đăng nhập sẽ không hoạt động.
-const app = initializeApp(firebaseConfig);
+// Khởi tạo Firebase (Singleton pattern để tránh lỗi duplicate app khi hot reload)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// Khởi tạo Analytics (chỉ chạy ở phía client browser)
+if (typeof window !== 'undefined') {
+  try {
+    getAnalytics(app);
+  } catch (e) {
+    console.warn("Firebase Analytics warning:", e);
+  }
+}
+
+// Xuất Auth để sử dụng trong Header và các nơi khác
 export const auth = getAuth(app);
+
+// Hàm kiểm tra cấu hình luôn trả về true vì đã hardcode config đúng
+export const isFirebaseConfigured = () => {
+  return true;
+};
