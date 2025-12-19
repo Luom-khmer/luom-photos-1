@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Home, LogIn, Copy, Mail, Globe, LogOut, User as UserIcon, Settings } from 'lucide-react';
+import { Home, LogIn, Copy, Mail, Globe, LogOut, User as UserIcon } from 'lucide-react';
 import { auth, isFirebaseConfigured } from '../firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { FirebaseConfigModal } from './FirebaseConfigModal';
 
 export const Header: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [showFirebaseConfig, setShowFirebaseConfig] = useState(false);
 
   useEffect(() => {
     // Lắng nghe trạng thái đăng nhập
@@ -28,23 +26,12 @@ export const Header: React.FC = () => {
   const handleLogin = async (e: React.MouseEvent) => {
     e.preventDefault();
 
-    // Kiểm tra cấu hình trước khi gọi Firebase
-    if (!isFirebaseConfigured()) {
-        setShowFirebaseConfig(true);
-        return;
-    }
-
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       console.error("Lỗi đăng nhập:", error);
-      if (error.code === 'auth/configuration-not-found' || error.code === 'auth/api-key-not-valid' || error.code === 'auth/internal-error') {
-          // Nếu lỗi liên quan đến config, hiện bảng cài đặt
-          setShowFirebaseConfig(true);
-      } else {
-          alert(`Đăng nhập thất bại: ${error.message}`);
-      }
+      alert(`Đăng nhập thất bại: ${error.message}`);
     }
   };
 
@@ -123,15 +110,6 @@ export const Header: React.FC = () => {
                     <LogIn className="w-4 h-4 mr-1" />
                     Đăng Nhập
                   </a>
-                  {!isFirebaseConfigured() && (
-                      <button 
-                        onClick={() => setShowFirebaseConfig(true)}
-                        className="text-white/50 hover:text-yellow-300 ml-1" 
-                        title="Cấu hình Firebase"
-                      >
-                        <Settings className="w-3 h-3" />
-                      </button>
-                  )}
                  </li>
               )}
 
@@ -157,11 +135,6 @@ export const Header: React.FC = () => {
           </nav>
         </div>
       </header>
-      
-      {/* Configuration Modal */}
-      {showFirebaseConfig && (
-          <FirebaseConfigModal onClose={() => setShowFirebaseConfig(false)} />
-      )}
     </>
   );
 };
