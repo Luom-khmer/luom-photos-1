@@ -1,13 +1,48 @@
-import React from 'react';
-import { Home, LogIn, Copy, Mail, Globe } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { Home, LogIn, Copy, Mail, Globe, LogOut, User as UserIcon } from 'lucide-react';
+import { auth } from '../firebase';
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 export const Header: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Lắng nghe trạng thái đăng nhập
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Thay đổi URL về gốc mà không reload trang (xóa query params và hash)
     window.history.pushState({}, '', window.location.pathname);
-    // Bắn sự kiện popstate để App.tsx bắt được và cập nhật giao diện về trang tạo album
     window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const handleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Lỗi đăng nhập:", error);
+      if (error.code === 'auth/configuration-not-found' || error.code === 'auth/api-key-not-valid') {
+          alert("Chưa cấu hình Firebase! Vui lòng mở file firebase.ts và nhập thông tin config của bạn.");
+      } else {
+          alert(`Đăng nhập thất bại: ${error.message}`);
+      }
+    }
+  };
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Lỗi đăng xuất:", error);
+    }
   };
 
   return (
@@ -16,10 +51,8 @@ export const Header: React.FC = () => {
         
         {/* Logo Section */}
         <div className="flex items-center space-x-2">
-          {/* Logo click cũng về trang chủ */}
           <div className="flex flex-col cursor-pointer" onClick={handleHomeClick}>
             <h1 className="text-2xl font-bold tracking-tight text-yellow-400 drop-shadow-sm flex items-center">
-              {/* Logo Image */}
               <img 
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100" 
                 alt="Luom Photos Logo" 
@@ -44,12 +77,40 @@ export const Header: React.FC = () => {
                 Trang Chủ
               </a>
             </li>
-            <li>
-              <a href="#" className="flex items-center hover:text-yellow-300 transition-colors">
-                <LogIn className="w-4 h-4 mr-1" />
-                Đăng Nhập
-              </a>
-            </li>
+            
+            {/* Login / User Info Area */}
+            {user ? (
+               <li className="relative group">
+                  <button className="flex items-center hover:text-yellow-300 transition-colors focus:outline-none">
+                    {user.photoURL ? (
+                        <img src={user.photoURL} alt="Avatar" className="w-5 h-5 rounded-full mr-1.5 border border-white/50" />
+                    ) : (
+                        <UserIcon className="w-4 h-4 mr-1" />
+                    )}
+                    <span className="max-w-[100px] truncate md:max-w-[150px]">{user.displayName || user.email}</span>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block animate-in fade-in zoom-in-95 duration-200 z-50">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-xs text-gray-500 font-normal">Đăng nhập bởi</p>
+                          <p className="text-sm font-bold text-gray-800 truncate">{user.email}</p>
+                      </div>
+                      <a href="#" onClick={handleLogout} className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Đăng Xuất
+                      </a>
+                  </div>
+               </li>
+            ) : (
+               <li>
+                <a href="#" onClick={handleLogin} className="flex items-center hover:text-yellow-300 transition-colors">
+                  <LogIn className="w-4 h-4 mr-1" />
+                  Đăng Nhập
+                </a>
+               </li>
+            )}
+
             <li>
               <a href="#" className="flex items-center hover:text-yellow-300 transition-colors">
                 <Copy className="w-4 h-4 mr-1" />
